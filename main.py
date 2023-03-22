@@ -8,39 +8,49 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 class MNISTDataset(dataset):
-        def __init__(self, data):
-                self.data = data
-        
-        def __len__(self):
-                return len(self.data)
-        
-        def __getItem__(self, idx):
-                label = self.data.iloc[idx, 0]
-                image = self.data.iloc[idx, 1].values.astype(np.float32).reshape(1, 28, 28)
-                return torch.tensor(image), torch.tensor(label)
-        
-
-def load_data(train_csv, test_csv):
-        train_data = pd.read_csv(train_data)
-        test_data = pd.read_csv(test_data)
-
-        return train_data, test_data
-
+    def __init__(self, data):
+        self.data = data
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getItem__(self, idx):
+        label = self.data.iloc[idx, 0]
+        image = self.data.iloc[idx, 1].values.astype(np.float32).reshape(1, 28, 28)
+        return torch.tensor(image), torch.tensor(label)
 
 class MNISTClasifier(nn.module):
     def __init__(self):
-           self.conv1 = nn.Conv2d(1, 32, 3, padding=1)
-           self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
-           self.fc1 = nn.Linear(64 * 7 * 7, 128)
-           self.fc2 = nn.Linear(128, 10)
-           self.pool = nn.MaxPool2d(2,2)
-           self.relu = nn.ReLU()
+        self.conv1 = nn.Conv2d(1, 32, 3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+        self.fc1 = nn.Linear(64 * 7 * 7, 128)
+        self.fc2 = nn.Linear(128, 10)
+        self.pool = nn.MaxPool2d(2,2)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-           x = self.pool(self.relu(self.conv1(x)))
-           x = self.pool(self.relu(self.conv2(x)))
-           x = x.view(-1, 64 * 7 * 7)
-           x = self.relu(self.fc1(x))
-           x = self.fc2(x)
-           return x
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = x.view(-1, 64 * 7 * 7)
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
 
+def load_data(train_csv, test_csv):
+    train_data = pd.read_csv(train_data)
+    test_data = pd.read_csv(test_data)
+
+    return train_data, test_data
+
+def train_model(model, dataloader, criterion, optimizer, device):
+    model.train()
+    running_loss = 0.0
+    for images, labels in dataloder:
+            images, labels = images.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+    return running_loss / len(dataloader)
